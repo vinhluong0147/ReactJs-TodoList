@@ -7,78 +7,146 @@ import TaskList from './Components/TaskList/TaskList';
 import Modal from './Components/Modal/Modal';
 
 // import data
-import data from './data';
-
+import listOfTask from './Model/getData'
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      taskList: [],
-      task: {},
-      isAddNewTask: true
+      tasks: [],
+      taskInfor: null,
+      isAddNewTask: true,
+      filterType: '',
+      filterProgress: -1,
+      filterSearch: '',
+      filterLabel: '',
+      sortType: '',
+      sortPriority: -1
     }
   }
-  
-  saveLS = () => {
-    localStorage.setItem('tasks', JSON.stringify(data));
-    window.location.reload();
-  }
-
-  componentDidMount() {
-    const taskList = JSON.parse(localStorage.getItem('tasks'));
+  setLocalStorage = () => {
+      localStorage.setItem('tasks', JSON.stringify(listOfTask.list))
+    }
+  componentWillMount = () => {
+    let tasksItem = JSON.parse(localStorage.getItem('tasks'))
     this.setState({
-      taskList
-      // taskList: taskList
+      tasks: tasksItem
     })
   }
 
-  addTask = (task) => {
-    let taskList = JSON.parse(localStorage.getItem('tasks'))
-    taskList.push(task);
-    localStorage.setItem('tasks', JSON.stringify(taskList));
-    this.setState({
-      taskList
-      // taskList: taskList
-    })
+
+  addNewTask = (task) => {
+    if(this.state.isAddNewTask){
+      let tasksItem = JSON.parse(localStorage.getItem('tasks'))
+      tasksItem = [...tasksItem, task]
+      this.setState({
+        tasks: tasksItem,
+      })
+      localStorage.setItem('tasks', JSON.stringify(tasksItem))
+    }
+    
   }
 
-  getTask = (task) => {
+  findTaskToEdit = (task) => {
     this.setState({
-      task
-    })
-  } 
-
-  convertAddToEdit = () => {
-    this.setState({
+      taskInfor: task,
       isAddNewTask: false
-    })
-  }
-
-  convertEditToAdd = () => {
-    this.setState({
-      isAddNewTask: true
+      
     })
   }
 
   editTask = (task) => {
-    console.log("Edit: ", task)
-    // Lấy data từ localstorage
-    let taskList = JSON.parse(localStorage.getItem('tasks'))
+    if(!this.state.isAddNewTask){
+      let tasksItem = JSON.parse(localStorage.getItem('tasks'))
+      for(let i in tasksItem){
+        if(tasksItem[i].id === task.id){
+          tasksItem[i].name = task.name
+          tasksItem[i].priority = task.priority
+          tasksItem[i].labelArr = task.labelArr
+          tasksItem[i].memberIDArr = task.memberIDArr
+          tasksItem[i].status = task.status
+          tasksItem[i].description = task.description
+        }
+      }
+      this.setState({
+      tasks: tasksItem
+    })
+    localStorage.setItem('tasks', JSON.stringify(tasksItem))
+    }
+  }
 
-    // tìm index trong taskList
-    const index = taskList.findIndex(elm => elm.id === task.id);
-    taskList[index] = task
-
-    // update LS
-    localStorage.setItem('tasks', JSON.stringify(taskList));
-
-    // hiển giao diện
+  clearForm = () => {
     this.setState({
-      taskList: taskList
+      isAddNewTask: true
     })
   }
 
+  changeProgress = (id, progress) => {
+    console.log(progress)
+    let tasksItem = JSON.parse(localStorage.getItem('tasks'));
+    for(let index in tasksItem){
+      if(tasksItem[index].id === id){
+        tasksItem[index].status = progress
+      }
+    }
+    this.setState({
+      tasks: tasksItem
+    })
+    localStorage.setItem('tasks', JSON.stringify(tasksItem))
+  } 
+
+  changeFilterProgress = (filterProgress) => {
+    this.setState({
+      filterType: 'filterProgress',
+      filterProgress: filterProgress
+    })
+  }
+
+  changeFilterSearch = (filterSearch) => {
+    this.setState({
+      filterType: 'filterSearch',
+      filterSearch: filterSearch
+    })
+    
+  }
+  changeFilterLabel = (filterLabel)=> {
+    this.setState({
+      filterType: 'filterLabel',
+      filterLabel: filterLabel
+})
+  }
+
+
+  onDelete = (name) => {
+    let tasksItem = JSON.parse(localStorage.getItem('tasks'));
+    for(let index in tasksItem){
+      if(tasksItem[index].name === name){
+        tasksItem.splice(index, 1)
+      }
+    }
+    this.setState({
+      tasks: tasksItem
+    })
+    localStorage.setItem('tasks', JSON.stringify(tasksItem))
+  }
+
+  onSortPriority = (sortPriority) => {
+    this.setState({
+      filterType: 'Priority',
+      sortPriority: sortPriority
+    })
+  }
+  onSortList = (sortType) => {
+    this.setState({
+      filterType: 'Sort',
+      sortType: sortType
+    })
+  }
+
+
+
   render() {
+
+    let {tasks,taskInfor,isAddNewTask,filterType,filterProgress,filterSearch,sortType,sortPriority,filterLabel} = this.state
     return (
       <div className="App">
         <div>
@@ -88,25 +156,36 @@ class App extends Component {
               
               {/* PANEL */}
               <Controls 
-                saveLS={this.saveLS}
-                convertEditToAdd={this.convertEditToAdd}
+              setLocalStorage={this.setLocalStorage}
+              isAddNewTask={this.clearForm}
+              changeFilterProgress={this.changeFilterProgress}
+              onSortList={this.onSortList}
+              onSortPriority={this.onSortPriority}
+              changeFilterLabel={this.changeFilterLabel}
               />
 
               {/* DISPLAY */}
               <TaskList 
-                data={this.state.taskList}
-                getTask={this.getTask}
-                convertAddToEdit={this.convertAddToEdit}
+              tasks={tasks}
+              findTaskToEdit={this.findTaskToEdit}
+              changeProgress={this.changeProgress}
+              filterType={filterType}
+              filterProgress={filterProgress}
+              changeFilterSearch={this.changeFilterSearch}
+              filterSearch={filterSearch}
+              onDelete={this.onDelete}
+              sortType={sortType}
+              sortPriority={sortPriority}
+              filterLabel={filterLabel}
               />
 
             </div>
           </div>
           {/* The Modal */}
-          <Modal 
-            addTask={this.addTask}
-            task={this.state.task}
-            isAddNewTask={this.state.isAddNewTask}
-            editTask={this.editTask}
+          <Modal addNewTask={this.addNewTask}
+          taskInfor={taskInfor}
+          isAddNewTask={isAddNewTask}
+          editTask={this.editTask}
           />
           
         </div>
