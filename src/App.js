@@ -25,12 +25,19 @@ class App extends Component {
   }
   setLocalStorage = () => {
       localStorage.setItem('tasks', JSON.stringify(listOfTask.list))
+      window.location.reload()
     }
-  componentWillMount = () => {
+  componentDidMount = () => {
+    if(!localStorage.getItem('tasks')){
+      localStorage.setItem('tasks', JSON.stringify(listOfTask.list))
+    }
     let tasksItem = JSON.parse(localStorage.getItem('tasks'))
     this.setState({
       tasks: tasksItem
     })
+    
+    
+    
   }
 
 
